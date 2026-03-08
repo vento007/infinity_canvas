@@ -4,8 +4,6 @@
 
 <h1 align="center">High-performance infinite canvas for Flutter</h1>
 
-<p align="center"><em>High-performance infinite canvas for Flutter</em></p>
-
 <p align="center">
   <a href="https://pub.dev/packages/infinity_canvas">
     <img src="https://img.shields.io/pub/v/infinity_canvas.svg" alt="Pub">

@@ -1,4 +1,4 @@
-## 0.8.0
+## 0.8.1
 
 Initial standalone release of `infinity_canvas`.
 

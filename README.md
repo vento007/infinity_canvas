@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/vento007/infinity_canvas/main/media/logo.png" alt="Infinity Canvas Logo" width="520"/>
+  <img src="https://raw.githubusercontent.com/vento007/infinity_canvas/main/media/logo2.png" alt="Infinity Canvas Logo" width="520"/>
 </div>
 
 <h1 align="center">Infinity Canvas</h1>
@@ -39,6 +39,12 @@
 - Mixed layers: positioned widgets, painter passes, and overlays
 - Programmatic camera/item control
 - Built for large scenes (node editors, maps, strategy UIs, visual tooling)
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/vento007/infinity_canvas/main/media/node-editor.png" alt="Node editor demo" width="31%" />
+  <img src="https://raw.githubusercontent.com/vento007/infinity_canvas/main/media/galaxy-trade-map.png" alt="Galaxy trade map demo" width="31%" />
+  <img src="https://raw.githubusercontent.com/vento007/infinity_canvas/main/media/database-editor.png" alt="Database editor demo" width="31%" />
+</p>
 
 ## Install
 

@@ -2,7 +2,7 @@
   <img src="https://raw.githubusercontent.com/vento007/infinity_canvas/main/media/logo2.png" alt="Infinity Canvas Logo" width="520"/>
 </div>
 
-<h1 align="center">Infinity Canvas</h1>
+<h1 align="center">High-performance infinite canvas for Flutter</h1>
 
 <p align="center"><em>High-performance infinite canvas for Flutter</em></p>
 

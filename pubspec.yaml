@@ -1,9 +1,9 @@
 name: infinity_canvas
 description: High-performance infinite canvas for Flutter with layered rendering and controller-driven camera/item APIs.
 version: 0.8.0
-homepage: https://github.com/vento007/canvas_kit
-repository: https://github.com/vento007/canvas_kit
-issue_tracker: https://github.com/vento007/canvas_kit/issues
+homepage: https://github.com/vento007/infinity_canvas
+repository: https://github.com/vento007/infinity_canvas
+issue_tracker: https://github.com/vento007/infinity_canvas/issues
 topics:
   - canvas
   - infinite-canvas

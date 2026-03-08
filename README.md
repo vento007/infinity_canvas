@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/vento007/canvas_kit/main/infinity_canvas/media/logo.png" alt="Infinity Canvas Logo" width="520"/>
+  <img src="https://raw.githubusercontent.com/vento007/infinity_canvas/main/media/logo.png" alt="Infinity Canvas Logo" width="520"/>
 </div>
 
 <h1 align="center">Infinity Canvas</h1>
@@ -10,8 +10,8 @@
   <a href="https://pub.dev/packages/infinity_canvas">
     <img src="https://img.shields.io/pub/v/infinity_canvas.svg" alt="Pub">
   </a>
-  <a href="https://github.com/vento007/canvas_kit">
-    <img src="https://img.shields.io/github/stars/vento007/canvas_kit.svg?style=flat&logo=github&colorB=deeppink&label=stars" alt="Star on Github">
+  <a href="https://github.com/vento007/infinity_canvas">
+    <img src="https://img.shields.io/github/stars/vento007/infinity_canvas.svg?style=flat&logo=github&colorB=deeppink&label=stars" alt="Star on Github">
   </a>
   <a href="https://opensource.org/licenses/MIT">
     <img src="https://img.shields.io/badge/license-MIT-purple.svg" alt="License: MIT">
@@ -22,6 +22,16 @@
   <img src="https://img.shields.io/badge/dart-3.8.1-blue.svg" alt="Dart Version">
   <img src="https://img.shields.io/badge/flutter-1.17.0%2B-blue.svg" alt="Flutter Version">
   <img src="https://img.shields.io/badge/platform-android%20|%20ios%20|%20web%20|%20windows%20|%20macos%20|%20linux-blue.svg" alt="Platform Support">
+  <a href="https://github.com/vento007/infinity_canvas/issues">
+    <img src="https://img.shields.io/github/issues/vento007/infinity_canvas.svg" alt="Open Issues">
+  </a>
+  <a href="https://github.com/vento007/infinity_canvas/pulls">
+    <img src="https://img.shields.io/github/issues-pr/vento007/infinity_canvas.svg" alt="Pull Requests">
+  </a>
+  <a href="https://github.com/vento007/infinity_canvas/graphs/contributors">
+    <img src="https://img.shields.io/github/contributors/vento007/infinity_canvas.svg" alt="Contributors">
+  </a>
+  <img src="https://img.shields.io/github/last-commit/vento007/infinity_canvas.svg" alt="Last Commit">
 </p>
 
 ---
@@ -34,7 +44,7 @@
 
 ```yaml
 dependencies:
-  infinity_canvas: ^0.0.1
+  infinity_canvas: ^0.8.0
 ```
 
 ## Quickstart

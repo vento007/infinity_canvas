@@ -13,7 +13,7 @@ const double _galaxyMiniMapPanelPadding = 10;
 
 class GalaxyTradeMiniMapOverlay extends StatefulWidget {
   final GalaxyTradeScene scene;
-  final CanvasLayerController controller;
+  final CanvasApi controller;
   final ValueListenable<String?> selectedSystemId;
   final ValueListenable<String?> hoveredSystemId;
 
@@ -118,7 +118,7 @@ class _GalaxyTradeMiniMapOverlayState extends State<GalaxyTradeMiniMapOverlay> {
 
 class _GalaxyTradeMiniMapPainter extends CustomPainter {
   final GalaxyTradeScene scene;
-  final CanvasLayerController controller;
+  final CanvasApi controller;
   final ValueListenable<String?> selectedSystemId;
   final ValueListenable<String?> hoveredSystemId;
   final Listenable repaintListenable;

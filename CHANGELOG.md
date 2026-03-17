@@ -2,7 +2,11 @@
 
 **Breaking changes**
 
-- `CanvasTransformPainterBuilder` now receives a second `CanvasLayerController controller`
+- `CanvasLayerController` renamed to `CanvasApi`.
+
+  Migrate: replace every occurrence of `CanvasLayerController` with `CanvasApi`.
+
+- `CanvasTransformPainterBuilder` now receives a second `CanvasApi controller`
   parameter, consistent with `CanvasTransformWidgetBuilder`.
 
   Migrate: add `_` or a named parameter to every `painterBuilder` lambda.
@@ -13,9 +17,8 @@
   painterBuilder: (t, controller) => MyPainter(transform: t, controller: controller)
   ```
 
-- `CanvasLayerController` is now the single consistent controller type passed to both
-  builder callbacks. It exposes the full canvas API via `.camera`, `.items`, and `.layers`
-  sub-objects — equivalent in capability to `CanvasController`.
+- `CanvasApi` is the single consistent interface passed to both builder callbacks,
+  exposing the full canvas API via `.camera`, `.items`, and `.layers`.
 
 ## 0.8.1
 

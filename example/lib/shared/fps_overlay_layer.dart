@@ -43,7 +43,7 @@ CanvasTransformWidgetBuilder buildFpsOverlayLayerBuilder({
 }
 
 class _PerformanceOverlayCard extends StatefulWidget {
-  final CanvasLayerController controller;
+  final CanvasApi controller;
   final Duration sampleWindow;
   final Size overlaySize;
 

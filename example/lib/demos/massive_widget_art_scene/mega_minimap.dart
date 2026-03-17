@@ -11,7 +11,7 @@ const EdgeInsets tdMegaMiniMapMargin = EdgeInsets.all(14);
 
 class TdMegaMiniMapOverlay extends StatefulWidget {
   final TdMegaMapEngine engine;
-  final CanvasLayerController controller;
+  final CanvasApi controller;
   final Listenable repaint;
 
   const TdMegaMiniMapOverlay({
@@ -115,7 +115,7 @@ class _TdMegaMiniMapOverlayState extends State<TdMegaMiniMapOverlay> {
 
 class _TdMegaMiniMapPainter extends CustomPainter {
   final TdMegaMapEngine engine;
-  final CanvasLayerController controller;
+  final CanvasApi controller;
   final Listenable repaintListenable;
 
   _TdMegaMiniMapPainter({
@@ -275,7 +275,7 @@ class _TdMegaMiniProjection {
   static _TdMegaMiniProjection? fromEngine({
     required Size size,
     required TdMegaMapEngine engine,
-    required CanvasLayerController controller,
+    required CanvasApi controller,
   }) {
     final contentRect = _contentRectFor(size);
     if (contentRect.isEmpty) return null;

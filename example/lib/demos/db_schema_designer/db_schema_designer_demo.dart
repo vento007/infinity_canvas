@@ -257,7 +257,7 @@ class _DbSchemaDesignerDemoPageState extends State<DbSchemaDesignerDemoPage> {
     );
   }
 
-  Widget _inspector(CanvasLayerController controller) {
+  Widget _inspector(CanvasApi controller) {
     return AnimatedBuilder(
       animation: Listenable.merge([
         _selectedTableId,

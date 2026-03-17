@@ -380,7 +380,7 @@ class _GalaxyTradeMapDemoPageState extends State<GalaxyTradeMapDemoPage> {
     );
   }
 
-  Widget _overlayCard(CanvasLayerController controller) {
+  Widget _overlayCard(CanvasApi controller) {
     return AnimatedBuilder(
       animation: Listenable.merge([
         _selectedSystemId,

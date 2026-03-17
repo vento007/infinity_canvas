@@ -61,7 +61,7 @@ Matrix4 _lerpMatrix4(Matrix4 a, Matrix4 b, double t) {
 /// - [camera] for transform/pan/zoom operations
 /// - [items] for item diagnostics and programmatic item position updates
 /// - [layers] for layer visibility and order-state controls
-class CanvasController extends ChangeNotifier implements CanvasLayerController {
+class CanvasController extends ChangeNotifier implements CanvasApi {
   Matrix4 _transform;
   final double minZoom;
   final double maxZoom;

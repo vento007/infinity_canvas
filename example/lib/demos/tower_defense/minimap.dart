@@ -11,7 +11,7 @@ const EdgeInsets tdMiniMapMargin = EdgeInsets.all(14);
 
 class TdMiniMapOverlay extends StatefulWidget {
   final TdGameEngine engine;
-  final CanvasLayerController controller;
+  final CanvasApi controller;
   final Listenable repaint;
 
   const TdMiniMapOverlay({
@@ -115,7 +115,7 @@ class _TdMiniMapOverlayState extends State<TdMiniMapOverlay> {
 
 class _TdMiniMapPainter extends CustomPainter {
   final TdGameEngine engine;
-  final CanvasLayerController controller;
+  final CanvasApi controller;
   final Listenable repaintListenable;
   static const bool _traceMiniMap = false;
   static DateTime? _traceWindowStart;
@@ -373,7 +373,7 @@ class _TdMiniProjection {
   static _TdMiniProjection? fromEngine({
     required Size size,
     required TdGameEngine engine,
-    required CanvasLayerController controller,
+    required CanvasApi controller,
   }) {
     final contentRect = _contentRectFor(size);
     if (contentRect.isEmpty) return null;

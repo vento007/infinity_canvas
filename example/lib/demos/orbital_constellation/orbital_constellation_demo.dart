@@ -273,7 +273,7 @@ class _OrbitalConstellationDemoPageState
     );
   }
 
-  Widget _inspectorOverlay(CanvasLayerController controller) {
+  Widget _inspectorOverlay(CanvasApi controller) {
     return AnimatedBuilder(
       animation: Listenable.merge([
         _selectedBodyId,

@@ -50,7 +50,7 @@ CanvasTransformWidgetBuilder buildMiniMapLayerBuilder(
 class NodeMiniMapPainter extends CustomPainter {
   final List<DemoNode> nodes;
   final Offset Function(DemoNode node) worldPositionOf;
-  final CanvasLayerController controller;
+  final CanvasApi controller;
   final Listenable repaintListenable;
   final MiniMapBoundsMode boundsMode;
 
@@ -181,7 +181,7 @@ class NodeMiniMapPainter extends CustomPainter {
 class _MiniMapInteractive extends StatefulWidget {
   final List<DemoNode> nodes;
   final Offset Function(DemoNode node) worldPositionOf;
-  final CanvasLayerController controller;
+  final CanvasApi controller;
   final Listenable repaint;
   final MiniMapBoundsMode boundsMode;
 
@@ -293,7 +293,7 @@ class _MiniMapProjection {
     required Size size,
     required List<DemoNode> nodes,
     required Offset Function(DemoNode node) worldPositionOf,
-    required CanvasLayerController controller,
+    required CanvasApi controller,
     required MiniMapBoundsMode boundsMode,
   }) {
     final contentRect = _contentRectFor(size);

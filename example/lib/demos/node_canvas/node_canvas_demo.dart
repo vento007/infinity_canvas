@@ -738,12 +738,12 @@ class _NodeCanvasDemoPageState extends State<NodeCanvasDemoPage> {
                         layers: [
                           CanvasLayer.painter(
                             id: 'bg-grid',
-                            painterBuilder: (transform) =>
+                            painterBuilder: (transform, _) =>
                                 _InfiniteGridPainter(transform: transform),
                           ),
                           CanvasLayer.painter(
                             id: 'links',
-                            painterBuilder: (transform) => _NodeLinksPainter(
+                            painterBuilder: (transform, _) => _NodeLinksPainter(
                               nodes: _nodes,
                               nodesRevision: _nodesRevision,
                               transform: transform,

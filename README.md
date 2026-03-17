@@ -48,7 +48,7 @@
 
 ```yaml
 dependencies:
-  infinity_canvas: ^0.8.0
+  infinity_canvas: ^0.9.0
 ```
 
 ## Quickstart
@@ -164,7 +164,7 @@ InfinityCanvas(
   layers: [
     CanvasLayer.painter(
       id: 'bg',
-      painterBuilder: (transform) => MyBackgroundPainter(transform),
+      painterBuilder: (transform, controller) => MyBackgroundPainter(transform),
     ),
     CanvasLayer.positionedItems(id: 'nodes', items: items),
     CanvasLayer.overlay(

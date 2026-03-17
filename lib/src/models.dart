@@ -217,6 +217,9 @@ abstract interface class CanvasLayersApi {
   void toggleVisible(CanvasLayerId layerId);
 }
 
+/// The controller interface passed to both [CanvasTransformWidgetBuilder] and
+/// [CanvasTransformPainterBuilder]. Exposes the full canvas API through
+/// [camera], [items], and [layers] sub-objects.
 abstract interface class CanvasLayerController {
   Matrix4 get transform;
   double get scale;
@@ -245,7 +248,7 @@ typedef CanvasTransformWidgetBuilder =
       CanvasLayerController controller,
     );
 typedef CanvasTransformPainterBuilder =
-    CustomPainter Function(Matrix4 transform);
+    CustomPainter Function(Matrix4 transform, CanvasLayerController controller);
 
 sealed class CanvasLayer {
   final CanvasLayerId id;

@@ -7,7 +7,7 @@ CanvasTransformPainterBuilder buildLinksPainterBuilder(
   NodeCanvasDemoState demoState,
 ) {
   final repaint = demoState.linksRepaintListenable();
-  return (transform) => NodeLinksPainter(
+  return (transform, _) => NodeLinksPainter(
     nodes: demoState.nodes,
     columns: NodeCanvasDemoState.gridColumns,
     worldPositionOf: demoState.worldPositionFor,

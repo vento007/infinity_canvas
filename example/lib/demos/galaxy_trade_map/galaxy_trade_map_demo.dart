@@ -569,7 +569,7 @@ class _GalaxyTradeMapDemoPageState extends State<GalaxyTradeMapDemoPage> {
               layers: [
                 CanvasLayer.painter(
                   id: 'galaxy-backdrop',
-                  painterBuilder: (transform) => GalaxyBackdropPainter(
+                  painterBuilder: (transform, _) => GalaxyBackdropPainter(
                     transform: transform,
                     scene: _scene,
                     readTimeSeconds: () => _timeSeconds,
@@ -579,7 +579,7 @@ class _GalaxyTradeMapDemoPageState extends State<GalaxyTradeMapDemoPage> {
                 ),
                 CanvasLayer.painter(
                   id: 'galaxy-meteors',
-                  painterBuilder: (transform) => GalaxyMeteorsPainter(
+                  painterBuilder: (transform, _) => GalaxyMeteorsPainter(
                     transform: transform,
                     meteors: _meteors,
                     repaint: _tick,
@@ -587,7 +587,7 @@ class _GalaxyTradeMapDemoPageState extends State<GalaxyTradeMapDemoPage> {
                 ),
                 CanvasLayer.painter(
                   id: 'galaxy-routes',
-                  painterBuilder: (transform) => GalaxyTradeRoutesPainter(
+                  painterBuilder: (transform, _) => GalaxyTradeRoutesPainter(
                     transform: transform,
                     scene: _scene,
                     shipments: _shipments,

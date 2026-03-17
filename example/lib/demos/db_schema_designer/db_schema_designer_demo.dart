@@ -408,7 +408,7 @@ class _DbSchemaDesignerDemoPageState extends State<DbSchemaDesignerDemoPage> {
               layers: [
                 CanvasLayer.painter(
                   id: 'schema-background',
-                  painterBuilder: (transform) => DbSchemaBackgroundPainter(
+                  painterBuilder: (transform, _) => DbSchemaBackgroundPainter(
                     transform: transform,
                     readTimeSeconds: () => _timeSeconds,
                     repaint: _tick,
@@ -416,7 +416,7 @@ class _DbSchemaDesignerDemoPageState extends State<DbSchemaDesignerDemoPage> {
                 ),
                 CanvasLayer.painter(
                   id: 'schema-relations',
-                  painterBuilder: (transform) => DbSchemaRelationsPainter(
+                  painterBuilder: (transform, _) => DbSchemaRelationsPainter(
                     transform: transform,
                     relations: _scene.relations,
                     tablesById: _tableById,

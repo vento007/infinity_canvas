@@ -583,7 +583,7 @@ class _TowerDefenseDemoPageState extends State<TowerDefenseDemoPage> {
                               ),
                               CanvasLayer.painter(
                                 id: 'td-path-fx',
-                                painterBuilder: (transform) => TdPathFxPainter(
+                                painterBuilder: (transform, _) => TdPathFxPainter(
                                   transform: transform,
                                   engine: _engine,
                                   lineProgram: _fxLineProgram,
@@ -592,7 +592,7 @@ class _TowerDefenseDemoPageState extends State<TowerDefenseDemoPage> {
                               ),
                               CanvasLayer.painter(
                                 id: 'td-world',
-                                painterBuilder: (transform) => TdWorldPainter(
+                                painterBuilder: (transform, _) => TdWorldPainter(
                                   transform: transform,
                                   engine: _engine,
                                   selectedKind: _selectedKind.value,
@@ -608,7 +608,7 @@ class _TowerDefenseDemoPageState extends State<TowerDefenseDemoPage> {
                               ),
                               CanvasLayer.painter(
                                 id: 'td-fx',
-                                painterBuilder: (transform) => TdWorldFxPainter(
+                                painterBuilder: (transform, _) => TdWorldFxPainter(
                                   transform: transform,
                                   engine: _engine,
                                   orbProgram: _fxOrbProgram,

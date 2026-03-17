@@ -713,7 +713,7 @@ class _DockingWindowsDemoPageState extends State<DockingWindowsDemoPage> {
             layers: [
               CanvasLayer.painter(
                 id: 'docking-bg-grid',
-                painterBuilder: (_) => _DockBackgroundPainter(),
+                painterBuilder: (_, __) => _DockBackgroundPainter(),
               ),
               CanvasLayer.positionedItems(
                 id: 'docking-windows-docked',

@@ -219,7 +219,7 @@ class _InputSmokeDemoPageState extends State<InputSmokeDemoPage> {
               layers: [
                 CanvasLayer.painter(
                   id: 'input-grid',
-                  painterBuilder: (transform) =>
+                  painterBuilder: (transform, _) =>
                       _InputSmokeGridPainter(transform: transform),
                 ),
                 CanvasLayer.positionedItems(id: 'input-items', items: _items),

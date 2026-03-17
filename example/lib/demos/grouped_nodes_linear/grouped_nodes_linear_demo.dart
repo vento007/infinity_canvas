@@ -123,7 +123,7 @@ class _GroupedNodesLinearDemoPageState
               layers: [
                 CanvasLayer.painter(
                   id: 'background',
-                  painterBuilder: (_) => const GroupedNodesLinearGridPainter(),
+                  painterBuilder: (_, __) => const GroupedNodesLinearGridPainter(),
                 ),
                 CanvasLayer.positionedItems(
                   id: 'backdrops',

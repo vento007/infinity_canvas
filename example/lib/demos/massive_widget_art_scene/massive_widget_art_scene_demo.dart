@@ -353,12 +353,12 @@ class _MassiveWidgetArtSceneDemoPageState
               layers: [
                 CanvasLayer.painter(
                   id: 'td-mega-bg',
-                  painterBuilder: (transform) =>
+                  painterBuilder: (transform, _) =>
                       TdMegaBackdropPainter(transform: transform),
                 ),
                 CanvasLayer.painter(
                   id: 'td-mega-world',
-                  painterBuilder: (transform) => TdMegaWorldPainter(
+                  painterBuilder: (transform, _) => TdMegaWorldPainter(
                     transform: transform,
                     engine: _engine,
                     paintCreeps: _creepRenderMode == _CreepRenderMode.painter,

@@ -1,3 +1,22 @@
+## 0.9.0
+
+**Breaking changes**
+
+- `CanvasTransformPainterBuilder` now receives a second `CanvasLayerController controller`
+  parameter, consistent with `CanvasTransformWidgetBuilder`.
+
+  Migrate: add `_` or a named parameter to every `painterBuilder` lambda.
+  ```dart
+  // Before
+  painterBuilder: (t) => MyPainter(transform: t)
+  // After
+  painterBuilder: (t, controller) => MyPainter(transform: t, controller: controller)
+  ```
+
+- `CanvasLayerController` is now the single consistent controller type passed to both
+  builder callbacks. It exposes the full canvas API via `.camera`, `.items`, and `.layers`
+  sub-objects — equivalent in capability to `CanvasController`.
+
 ## 0.8.1
 
 Initial standalone release of `infinity_canvas`.

@@ -118,7 +118,7 @@ class CanvasController extends ChangeNotifier implements CanvasLayerController {
          'Use either initialTransform OR initialWorldTopLeft/initialZoom.',
        ),
        assert(minZoom > 0, 'minZoom must be > 0.'),
-       assert(minZoom < maxZoom, 'minZoom must be < maxZoom.'),
+       assert(minZoom <= maxZoom, 'minZoom must be <= maxZoom.'),
        assert(
          initialZoom >= minZoom && initialZoom <= maxZoom,
          'initialZoom must be within minZoom..maxZoom.',

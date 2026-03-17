@@ -425,7 +425,7 @@ class _OrbitalConstellationDemoPageState
               layers: [
                 CanvasLayer.painter(
                   id: 'orbital-backdrop',
-                  painterBuilder: (transform) => OrbitalBackdropPainter(
+                  painterBuilder: (transform, _) => OrbitalBackdropPainter(
                     transform: transform,
                     scene: _scene,
                     readTimeSeconds: () => _timeSeconds,
@@ -434,7 +434,7 @@ class _OrbitalConstellationDemoPageState
                 ),
                 CanvasLayer.painter(
                   id: 'orbital-network',
-                  painterBuilder: (transform) => OrbitalNetworkPainter(
+                  painterBuilder: (transform, _) => OrbitalNetworkPainter(
                     transform: transform,
                     scene: _scene,
                     bodiesByHub: _bodiesByHub,

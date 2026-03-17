@@ -31,3 +31,9 @@ migrate_working_dir/
 build/
 .claude/
 .metadata
+third-party
+/third-party
+third_party/
+/third_party/
+example/third_party/
+example/flutter_01.png

@@ -459,7 +459,7 @@ class _InfinityCanvasState extends State<InfinityCanvas> {
       child: ValueListenableBuilder<int>(
         valueListenable: _cameraStore.tick,
         builder: (context, _, __) {
-          final painter = layer.painterBuilder(_controller!.camera.transform);
+          final painter = layer.painterBuilder(_controller!.camera.transform, _controller!);
           return IgnorePointer(child: CustomPaint(painter: painter));
         },
       ),

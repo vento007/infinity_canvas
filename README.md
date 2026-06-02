@@ -214,7 +214,6 @@ See `example/lib/main.dart`:
 - Input Smoke
 - Docking Windows
 - Database Schema Designer
-- Tower Defense
 - Massive Multi-Widget Art Scene
 - Galaxy Trade Map
 - Orbital Constellation

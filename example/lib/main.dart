@@ -10,7 +10,6 @@ import 'demos/minimal_items/minimal_items_demo.dart';
 import 'demos/node_canvas_clean/node_canvas_clean_page.dart';
 import 'demos/orbital_constellation/orbital_constellation_demo.dart';
 import 'demos/painted_item_widgets/painted_item_widgets_demo.dart';
-import 'demos/tower_defense/tower_defense_demo.dart';
 
 void main() {
   runApp(const InfinityCanvasExampleApp());
@@ -116,19 +115,6 @@ class DemoMenuPage extends StatelessWidget {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (_) => const NodeCanvasCleanPage(),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 12),
-          _DemoTile(
-            title: 'Tower Defense',
-            subtitle:
-                'Playable TD demo with ECS, shaders, and camera controls.',
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const TowerDefenseDemoPage(),
                 ),
               );
             },

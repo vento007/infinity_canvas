@@ -39,6 +39,23 @@ void main() {
     expect(controller.camera.scale, closeTo(0.5, 1e-9));
   });
 
+  test('constructor allows locked zoom range', () {
+    final controller = CanvasController(
+      minZoom: 1.5,
+      maxZoom: 1.5,
+      initialZoom: 1.5,
+    );
+    addTearDown(controller.dispose);
+
+    expect(controller.camera.scale, closeTo(1.5, 1e-9));
+
+    controller.camera.setScale(0.5);
+    expect(controller.camera.scale, closeTo(1.5, 1e-9));
+
+    controller.camera.setScale(4.0);
+    expect(controller.camera.scale, closeTo(1.5, 1e-9));
+  });
+
   test('setScale keeps focal world point fixed on screen', () {
     final controller = CanvasController();
     addTearDown(controller.dispose);

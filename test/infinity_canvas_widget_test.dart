@@ -74,7 +74,53 @@ Future<void> _sendPointerScroll(
   await tester.pump();
 }
 
+class _NoopPainter extends CustomPainter {
+  const _NoopPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {}
+
+  @override
+  bool shouldRepaint(covariant _NoopPainter oldDelegate) => false;
+}
+
 void main() {
+  testWidgets('painter layer receives CanvasApi controller', (
+    WidgetTester tester,
+  ) async {
+    final controller = CanvasController(initialZoom: 1.25);
+    addTearDown(controller.dispose);
+
+    CanvasApi? receivedController;
+    double? receivedScale;
+    Offset? receivedOriginScreen;
+
+    await tester.pumpWidget(
+      _buildHost(
+        controller: controller,
+        layers: <CanvasLayer>[
+          CanvasLayer.painter(
+            id: 'paint',
+            painterBuilder: (transform, api) {
+              receivedController = api;
+              receivedScale = api.scale;
+              receivedOriginScreen = api.camera.worldToScreen(Offset.zero);
+              return const _NoopPainter();
+            },
+          ),
+        ],
+      ),
+    );
+    await tester.pump();
+
+    expect(receivedController, same(controller));
+    expect(receivedScale, closeTo(1.25, 1e-9));
+    expect(
+      receivedOriginScreen,
+      equals(controller.camera.worldToScreen(Offset.zero)),
+    );
+  });
+
   testWidgets('drag works for item in negative world coordinates', (
     WidgetTester tester,
   ) async {

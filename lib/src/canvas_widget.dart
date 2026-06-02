@@ -459,10 +459,36 @@ class _InfinityCanvasState extends State<InfinityCanvas> {
       child: ValueListenableBuilder<int>(
         valueListenable: _cameraStore.tick,
         builder: (context, _, __) {
-          final painter = layer.painterBuilder(_controller!.camera.transform, _controller!);
+          final painter = layer.painterBuilder(
+            _controller!.camera.transform,
+            _controller!,
+          );
           return IgnorePointer(child: CustomPaint(painter: painter));
         },
       ),
+    );
+  }
+
+  Widget _buildWorldPainterLayer(CanvasWorldPainterLayer layer) {
+    final plateGeometry = _computePlateGeometry();
+    final worldStack = SizedBox(
+      width: plateGeometry.size.width,
+      height: plateGeometry.size.height,
+      child: IgnorePointer(
+        child: RepaintBoundary(
+          child: CustomPaint(
+            painter: _CanvasWorldPainterAdapter(
+              painter: layer.painterBuilder(_controller!),
+              plateOrigin: plateGeometry.origin,
+            ),
+            size: plateGeometry.size,
+          ),
+        ),
+      ),
+    );
+    return _buildPlateLayer(
+      worldStack: worldStack,
+      plateGeometry: plateGeometry,
     );
   }
 
@@ -484,7 +510,12 @@ class _InfinityCanvasState extends State<InfinityCanvas> {
         child: worldStack,
         builder: (context, _, child) {
           final transform = _controller!.camera.transform
-            ..translate(plateGeometry.origin.dx, plateGeometry.origin.dy);
+            ..translateByDouble(
+              plateGeometry.origin.dx,
+              plateGeometry.origin.dy,
+              0.0,
+              1.0,
+            );
           return Transform(
             alignment: Alignment.topLeft,
             transform: transform,
@@ -550,6 +581,8 @@ class _InfinityCanvasState extends State<InfinityCanvas> {
         layers.add(_buildWidgetLayer(layer));
       } else if (layer is CanvasPainterLayer) {
         layers.add(_buildPainterLayer(layer));
+      } else if (layer is CanvasWorldPainterLayer) {
+        layers.add(_buildWorldPainterLayer(layer));
       } else if (layer is CanvasPositionedItemsLayer) {
         layers.add(_buildItemsLayer(layer));
       }
@@ -690,6 +723,31 @@ class _InfinityCanvasState extends State<InfinityCanvas> {
         );
       },
     );
+  }
+}
+
+class _CanvasWorldPainterAdapter extends CustomPainter {
+  final CustomPainter painter;
+  final Offset plateOrigin;
+
+  const _CanvasWorldPainterAdapter({
+    required this.painter,
+    required this.plateOrigin,
+  }) : super(repaint: painter);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.save();
+    canvas.translate(-plateOrigin.dx, -plateOrigin.dy);
+    painter.paint(canvas, size);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _CanvasWorldPainterAdapter oldDelegate) {
+    if (oldDelegate.plateOrigin != plateOrigin) return true;
+    if (oldDelegate.painter.runtimeType != painter.runtimeType) return true;
+    return painter.shouldRepaint(oldDelegate.painter);
   }
 }
 

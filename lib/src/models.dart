@@ -249,6 +249,8 @@ typedef CanvasTransformWidgetBuilder =
     );
 typedef CanvasTransformPainterBuilder =
     CustomPainter Function(Matrix4 transform, CanvasApi controller);
+typedef CanvasWorldPainterBuilder =
+    CustomPainter Function(CanvasApi controller);
 
 sealed class CanvasLayer {
   final CanvasLayerId id;
@@ -266,6 +268,11 @@ sealed class CanvasLayer {
     required CanvasLayerId id,
     required CanvasTransformPainterBuilder painterBuilder,
   }) = CanvasPainterLayer;
+
+  const factory CanvasLayer.worldPainter({
+    required CanvasLayerId id,
+    required CanvasWorldPainterBuilder painterBuilder,
+  }) = CanvasWorldPainterLayer;
 
   const factory CanvasLayer.positionedItems({
     required CanvasLayerId id,
@@ -290,6 +297,15 @@ final class CanvasPainterLayer extends CanvasLayer {
   final CanvasTransformPainterBuilder painterBuilder;
 
   const CanvasPainterLayer({required super.id, required this.painterBuilder});
+}
+
+final class CanvasWorldPainterLayer extends CanvasLayer {
+  final CanvasWorldPainterBuilder painterBuilder;
+
+  const CanvasWorldPainterLayer({
+    required super.id,
+    required this.painterBuilder,
+  });
 }
 
 final class CanvasPositionedItemsLayer extends CanvasLayer {

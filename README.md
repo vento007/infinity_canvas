@@ -141,6 +141,38 @@ controller.items.setWorldPositions({
 To add another item, create another `CanvasItem(...)` with its own `id`,
 `worldPosition`, and `child`, then include it in the `items: [...]` list.
 
+### Auto-sized items and reflow
+
+Items default to `CanvasItemSize.auto()`, sizing themselves to their `child`.
+When you need to lay them out relative to each other but don't know their sizes
+up front (e.g. stacking a column of node-editor cards with variable content),
+listen for measured sizes instead of estimating or retrying post-frame:
+
+```dart
+// Reflow a column whenever any item's measured size changes.
+void layoutColumn(CanvasApi api, List<String> ids, {double x = 0, double gap = 100}) {
+  double y = 0;
+  final updates = <String, Offset>{};
+  for (final id in ids) {
+    final size = api.items.getEffectiveSize(id);
+    if (size == null) return; // not measured yet — a later signal will retry
+    updates[id] = Offset(x, y);
+    y += size.height + gap;
+  }
+  api.items.setWorldPositions(updates);
+}
+
+// Fires after each measurement, and getEffectiveSize already returns the new
+// size when it does — no post-frame settle loop needed.
+controller.items.measurementRevision.addListener(() {
+  layoutColumn(controller, ['a', 'b', 'c']);
+});
+```
+
+Use `controller.items.measuredSizeListenable(id)` instead if you only care about
+one item. Both guarantee that `getMeasuredSize`/`getEffectiveSize` already
+reflect the new size when the signal fires.
+
 ### Camera controls
 
 ```dart
@@ -244,7 +276,10 @@ See `example/lib/main.dart`:
 
 - `getDiagnostics(id)`
 - `getWorldPosition(id)`
+- `getMeasuredSize(id)` / `getEffectiveSize(id)`
 - `positionListenable(id)`
+- `measuredSizeListenable(id)`
+- `measurementRevision`
 - `setWorldPosition(id, offset)`
 - `setWorldPositions({id: offset})`
 - `setTransform(id, matrixOrNull)`

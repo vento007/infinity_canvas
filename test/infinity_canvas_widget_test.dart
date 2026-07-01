@@ -702,6 +702,69 @@ void main() {
     expect(r1.top - r0.top, closeTo(30, 0.01));
   });
 
+  testWidgets(
+    'measuredSizeListenable fires after store update with read-back guarantee',
+    (WidgetTester tester) async {
+      final controller = CanvasController();
+      addTearDown(controller.dispose);
+
+      final heightNotifier = ValueNotifier<double>(60);
+      addTearDown(heightNotifier.dispose);
+
+      await tester.pumpWidget(
+        _buildHost(
+          controller: controller,
+          layers: <CanvasLayer>[
+            CanvasLayer.positionedItems(
+              id: 'nodes',
+              items: <CanvasItem>[
+                CanvasItem(
+                  id: 'a',
+                  worldPosition: Offset.zero,
+                  // Auto size — measured from the child, not declared up front.
+                  child: ValueListenableBuilder<double>(
+                    valueListenable: heightNotifier,
+                    builder: (context, h, _) => SizedBox(width: 100, height: h),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+      // Let the measurement post-frame callbacks settle.
+      await tester.pump();
+      await tester.pump();
+
+      final listenable = controller.items.measuredSizeListenable('a');
+      expect(listenable, isNotNull);
+      expect(listenable!.value, const Size(100, 60));
+      expect(controller.items.getEffectiveSize('a'), const Size(100, 60));
+
+      // Capture what the store reports at the exact moment the signal fires.
+      Size? firedValue;
+      Size? effectiveAtFire;
+      int revisionAtFire = -1;
+      final startRevision = controller.items.measurementRevision.value;
+      listenable.addListener(() {
+        firedValue = listenable.value;
+        effectiveAtFire = controller.items.getEffectiveSize('a');
+        revisionAtFire = controller.items.measurementRevision.value;
+      });
+
+      // Grow the node; measurement is delivered on the following frame.
+      heightNotifier.value = 200;
+      await tester.pump();
+      await tester.pump();
+
+      expect(firedValue, const Size(100, 200));
+      // The core guarantee: when the listener fired, getEffectiveSize already
+      // returned the new size — no stale one-frame lag to settle-loop around.
+      expect(effectiveAtFire, const Size(100, 200));
+      expect(revisionAtFire, greaterThan(startRevision));
+    },
+  );
+
   testWidgets('disabling pan blocks drag and trackpad panning', (
     WidgetTester tester,
   ) async {

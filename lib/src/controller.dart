@@ -12,6 +12,9 @@ import 'models.dart';
 typedef _ReadItemDiagnostics = CanvasKitItemDiagnostics? Function(String id);
 typedef _ReadItemPositionListenable =
     ValueListenable<Offset>? Function(String id);
+typedef _ReadItemMeasuredSizeListenable =
+    ValueListenable<Size?>? Function(String id);
+typedef _ReadMeasurementRevision = ValueListenable<int> Function();
 typedef _SetItemWorldPosition = bool Function(String id, Offset worldPosition);
 typedef _SetItemWorldPositions =
     int Function(Map<String, Offset> worldPositionsById);
@@ -79,6 +82,9 @@ class CanvasController extends ChangeNotifier implements CanvasApi {
 
   _ReadItemDiagnostics? _readItemDiagnostics;
   _ReadItemPositionListenable? _readItemPositionListenable;
+  _ReadItemMeasuredSizeListenable? _readItemMeasuredSizeListenable;
+  _ReadMeasurementRevision? _readMeasurementRevision;
+  final ValueNotifier<int> _detachedMeasurementRevision = ValueNotifier<int>(0);
   _SetItemWorldPosition? _setItemWorldPosition;
   _SetItemWorldPositions? _setItemWorldPositions;
   _SetItemTransform? _setItemTransform;
@@ -375,6 +381,7 @@ class CanvasController extends ChangeNotifier implements CanvasApi {
   void dispose() {
     _cancelCameraAnimation();
     _renderStats.dispose();
+    _detachedMeasurementRevision.dispose();
     super.dispose();
   }
 }
@@ -597,6 +604,17 @@ class CanvasItemController implements CanvasItemsApi {
   }
 
   @override
+  ValueListenable<Size?>? measuredSizeListenable(String itemId) {
+    return _owner._readItemMeasuredSizeListenable?.call(itemId);
+  }
+
+  @override
+  ValueListenable<int> get measurementRevision {
+    return _owner._readMeasurementRevision?.call() ??
+        _owner._detachedMeasurementRevision;
+  }
+
+  @override
   Size? getMeasuredSize(String itemId) {
     return getDiagnostics(itemId)?.measuredSize;
   }
@@ -679,6 +697,8 @@ extension CanvasControllerBinding on CanvasController {
   void attachItemAccessors({
     CanvasKitItemDiagnostics? Function(String id)? readDiagnostics,
     ValueListenable<Offset>? Function(String id)? readPositionListenable,
+    ValueListenable<Size?>? Function(String id)? readMeasuredSizeListenable,
+    ValueListenable<int> Function()? readMeasurementRevision,
     bool Function(String id, Offset worldPosition)? setWorldPosition,
     int Function(Map<String, Offset> worldPositionsById)? setWorldPositions,
     bool Function(String id, Matrix4? transform)? setTransform,
@@ -692,6 +712,8 @@ extension CanvasControllerBinding on CanvasController {
   }) {
     _readItemDiagnostics = readDiagnostics;
     _readItemPositionListenable = readPositionListenable;
+    _readItemMeasuredSizeListenable = readMeasuredSizeListenable;
+    _readMeasurementRevision = readMeasurementRevision;
     _setItemWorldPosition = setWorldPosition;
     _setItemWorldPositions = setWorldPositions;
     _setItemTransform = setTransform;
@@ -705,6 +727,8 @@ extension CanvasControllerBinding on CanvasController {
   void detachItemAccessors() {
     _readItemDiagnostics = null;
     _readItemPositionListenable = null;
+    _readItemMeasuredSizeListenable = null;
+    _readMeasurementRevision = null;
     _setItemWorldPosition = null;
     _setItemWorldPositions = null;
     _setItemTransform = null;

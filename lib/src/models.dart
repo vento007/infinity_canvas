@@ -200,6 +200,21 @@ abstract interface class CanvasItemsApi {
   ValueListenable<Offset>? positionListenable(String itemId);
   Size? getMeasuredSize(String itemId);
   Size? getEffectiveSize(String itemId);
+
+  /// Notifies when [itemId]'s auto-measured size changes.
+  ///
+  /// The value is `null` until the item has been laid out at least once. When
+  /// this notifier fires, [getMeasuredSize]/[getEffectiveSize] are guaranteed
+  /// to already return the new size, so listeners can reflow (e.g. stack a
+  /// column) without post-frame retries. Returns `null` if [itemId] is unknown.
+  ValueListenable<Size?>? measuredSizeListenable(String itemId);
+
+  /// Increments whenever any item's auto-measured size changes.
+  ///
+  /// Convenient for reflowing a group of items from a single listener instead
+  /// of subscribing to each [measuredSizeListenable]. Carries the same
+  /// read-back guarantee as [measuredSizeListenable].
+  ValueListenable<int> get measurementRevision;
   Rect? getScreenRect(String itemId);
   bool setWorldPosition(String itemId, Offset worldPosition);
   int setWorldPositions(Map<String, Offset> worldPositionsById);

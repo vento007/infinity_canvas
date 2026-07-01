@@ -15,6 +15,9 @@ class CanvasItemStore {
       <String, ValueNotifier<bool>>{};
   final Map<String, _TransformListenable> _transformNotifiers =
       <String, _TransformListenable>{};
+  final Map<String, ValueNotifier<Size?>> _measuredSizeNotifiers =
+      <String, ValueNotifier<Size?>>{};
+  final ValueNotifier<int> _measurementRevision = ValueNotifier<int>(0);
   final Map<String, VoidCallback> _positionListeners = <String, VoidCallback>{};
   final Map<String, _OrderedLayerCache> _orderedLayerCache =
       <String, _OrderedLayerCache>{};
@@ -83,6 +86,9 @@ class CanvasItemStore {
       if (!_transformNotifiers.containsKey(item.id)) {
         _transformNotifiers[item.id] = _TransformListenable();
       }
+      if (!_measuredSizeNotifiers.containsKey(item.id)) {
+        _measuredSizeNotifiers[item.id] = ValueNotifier<Size?>(null);
+      }
     }
 
     final staleIds = _positionNotifiers.keys
@@ -97,6 +103,7 @@ class CanvasItemStore {
       notifier?.dispose();
       _dragEnabledNotifiers.remove(id)?.dispose();
       _transformNotifiers.remove(id)?.dispose();
+      _measuredSizeNotifiers.remove(id)?.dispose();
     }
     if (staleIds.isNotEmpty) {
       structureChanged = true;
@@ -136,10 +143,23 @@ class CanvasItemStore {
       return false;
     }
     _measuredSizes[id] = size;
+    // Fire change signals only after the store is mutated so that listeners
+    // observing these notifiers are guaranteed to read the new size back via
+    // measuredSizeFor / baseSizeFor (getEffectiveSize). Bump the revision
+    // before the per-item notifier so that a per-item listener also observes
+    // the already-incremented revision.
+    _measurementRevision.value++;
+    _measuredSizeNotifiers[id]?.value = size;
     return true;
   }
 
   Size? measuredSizeFor(String id) => _measuredSizes[id];
+
+  ValueListenable<Size?>? measuredSizeListenableFor(String id) {
+    return _measuredSizeNotifiers[id];
+  }
+
+  ValueListenable<int> get measurementRevision => _measurementRevision;
 
   Offset? worldPositionFor(String id) => _positionNotifiers[id]?.value;
 
@@ -274,10 +294,15 @@ class CanvasItemStore {
     for (final notifier in _transformNotifiers.values) {
       notifier.dispose();
     }
+    for (final notifier in _measuredSizeNotifiers.values) {
+      notifier.dispose();
+    }
+    _measurementRevision.dispose();
     _positionNotifiers.clear();
     _positionListeners.clear();
     _dragEnabledNotifiers.clear();
     _transformNotifiers.clear();
+    _measuredSizeNotifiers.clear();
     _orderedLayerCache.clear();
     _onAnyItemPositionChanged = null;
     _suppressPositionNotifications = false;

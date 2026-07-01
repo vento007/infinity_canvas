@@ -80,6 +80,8 @@ class _InfinityCanvasState extends State<InfinityCanvas> {
     _controller!.attachItemAccessors(
       readDiagnostics: _readItemDiagnostics,
       readPositionListenable: _readItemPositionListenable,
+      readMeasuredSizeListenable: _readItemMeasuredSizeListenable,
+      readMeasurementRevision: _readMeasurementRevision,
       setWorldPosition: _setItemWorldPosition,
       setWorldPositions: _setItemWorldPositions,
       setTransform: _setItemTransform,
@@ -113,6 +115,8 @@ class _InfinityCanvasState extends State<InfinityCanvas> {
       _controller!.attachItemAccessors(
         readDiagnostics: _readItemDiagnostics,
         readPositionListenable: _readItemPositionListenable,
+        readMeasuredSizeListenable: _readItemMeasuredSizeListenable,
+        readMeasurementRevision: _readMeasurementRevision,
         setWorldPosition: _setItemWorldPosition,
         setWorldPositions: _setItemWorldPositions,
         setTransform: _setItemTransform,
@@ -287,6 +291,14 @@ class _InfinityCanvasState extends State<InfinityCanvas> {
 
   ValueListenable<Offset>? _readItemPositionListenable(String id) {
     return _itemStore.positionListenableFor(id);
+  }
+
+  ValueListenable<Size?>? _readItemMeasuredSizeListenable(String id) {
+    return _itemStore.measuredSizeListenableFor(id);
+  }
+
+  ValueListenable<int> _readMeasurementRevision() {
+    return _itemStore.measurementRevision;
   }
 
   bool _bringItemToFront(String id) {

@@ -108,6 +108,7 @@ class _InfinityCanvasState extends State<InfinityCanvas> {
     super.didUpdateWidget(oldWidget);
 
     if (oldWidget.controller != widget.controller) {
+      _controller?.setViewportSize(Size.zero);
       _controller?.detachItemAccessors();
       _controller?.removeListener(_onControllerChanged);
       _controller = widget.controller;
@@ -148,6 +149,7 @@ class _InfinityCanvasState extends State<InfinityCanvas> {
   @override
   void dispose() {
     _renderStatsTimer?.cancel();
+    _controller?.setViewportSize(Size.zero);
     _cameraStore.dispose();
     _itemStore.dispose();
     _controller?.detachItemAccessors();
@@ -704,9 +706,9 @@ class _InfinityCanvasState extends State<InfinityCanvas> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final viewportChanged = _cameraStore.setViewportSize(
-          Size(constraints.maxWidth, constraints.maxHeight),
-        );
+        final viewportSize = Size(constraints.maxWidth, constraints.maxHeight);
+        final viewportChanged = _cameraStore.setViewportSize(viewportSize);
+        _controller!.setViewportSize(viewportSize);
         if (viewportChanged) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;

@@ -1,3 +1,25 @@
+## 0.11.0
+
+**New features**
+
+- Added `CanvasCameraApi.fitWorldRectAligned(...)` with contain, width, and
+  height fit modes; configurable alignment; logical-pixel screen padding; and
+  optional per-call zoom limits.
+- Added exact `viewportSize` and `viewportSizeListenable` camera state for
+  deterministic camera layout and resize handling without relying on throttled
+  render diagnostics.
+- Added an interactive Aligned Rectangle Fit example covering fit modes,
+  alignments, padding presets, zoom clamps, resize refitting, and separate 5%
+  zoom steps.
+
+**Breaking changes**
+
+- Added members to `CanvasCameraApi`. This is additive for API consumers but
+  requires third-party implementations of the interface to add the new fit and
+  viewport members.
+- `viewportSizeListenable` can notify during layout. Listeners that refit the
+  camera or update widgets should schedule that work in a post-frame callback.
+
 ## 0.10.0
 
 **New features**

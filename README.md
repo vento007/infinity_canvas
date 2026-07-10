@@ -186,7 +186,46 @@ await controller.camera.animateToWorldCenter(
 );
 
 controller.camera.fitAllItems();
+
+// Fit a paper-like rect to viewport width while pinning its top-left corner
+// 16 logical pixels inside the canvas.
+controller.camera.fitWorldRectAligned(
+  paperRect,
+  fit: CanvasFitMode.width,
+  alignment: Alignment.topLeft,
+  screenPadding: const EdgeInsets.all(16),
+  minZoom: 0.6,
+  maxZoom: 1.4,
+);
+
+// Exact layout state, separate from throttled diagnostics.
+controller.camera.viewportSize;
+controller.camera.viewportSizeListenable;
 ```
+
+`fitWorldRectAligned` computes the zoom and position for initial framing,
+reset, or application-controlled resize refitting. Zoom buttons are a separate
+UI policy: calculate the next scale and apply it with `setScale`.
+
+```dart
+void stepZoom(int steps) {
+  const step = 0.05; // Five percentage points.
+  final current = controller.camera.scale;
+  final nextZoom = ((current / step).round() + steps) * step;
+
+  controller.camera.setScale(
+    nextZoom,
+    // Keeps the fitted paper corner at its current screen position.
+    focalWorld: paperRect.topLeft,
+  );
+}
+
+stepZoom(-1); // 100% -> 95%
+stepZoom(1);  // 95% -> 100%
+```
+
+The step size and focal point are caller-controlled; the package does not
+hardcode a zoom-button policy.
 
 ### Layer types
 
@@ -239,6 +278,7 @@ CanvasItem(
 
 See `example/lib/main.dart`:
 
+- Aligned Rectangle Fit
 - Minimal Items
 - Painted Item Widgets
 - Node Canvas (Clean)
@@ -265,11 +305,13 @@ See `example/lib/main.dart`:
 - `animateToWorldTopLeft(...)`
 - `animateToWorldCenter(...)`
 - `fitWorldRect(...)`
+- `fitWorldRectAligned(...)`
 - `fitAllItems(...)`
 - `setScale(...)`
 - `translateWorld(...)`
 - `screenToWorld(...)`
 - `worldToScreen(...)`
+- `viewportSize` / `viewportSizeListenable`
 - `renderStatsListenable`
 
 ### `controller.items`

@@ -9,13 +9,14 @@ Widget _buildHost({
   required List<CanvasLayer> layers,
   CanvasInputBehavior inputBehavior = const CanvasInputBehavior.desktop(),
   bool enableCulling = false,
+  Size viewportSize = const Size(800, 600),
 }) {
   return MaterialApp(
     home: Scaffold(
       body: Center(
         child: SizedBox(
-          width: 800,
-          height: 600,
+          width: viewportSize.width,
+          height: viewportSize.height,
           child: InfinityCanvas(
             controller: controller,
             inputBehavior: inputBehavior,
@@ -283,6 +284,239 @@ void main() {
     expect(visible.top <= aRect.top + 0.01, isTrue);
     expect(visible.right >= bRect.right - 0.01, isTrue);
     expect(visible.bottom >= bRect.bottom - 0.01, isTrue);
+  });
+
+  testWidgets('viewport size is exact and tracks layout lifecycle', (
+    WidgetTester tester,
+  ) async {
+    final controller = CanvasController();
+    addTearDown(controller.dispose);
+    final observed = <Size>[];
+    void recordViewport() {
+      observed.add(controller.camera.viewportSize);
+    }
+
+    controller.camera.viewportSizeListenable.addListener(recordViewport);
+    addTearDown(
+      () => controller.camera.viewportSizeListenable.removeListener(
+        recordViewport,
+      ),
+    );
+
+    expect(controller.camera.viewportSize, Size.zero);
+
+    await tester.pumpWidget(
+      _buildHost(
+        controller: controller,
+        layers: const [
+          CanvasLayer.positionedItems(id: 'empty', items: <CanvasItem>[]),
+        ],
+      ),
+    );
+    expect(controller.camera.viewportSize, const Size(800, 600));
+    expect(observed, [const Size(800, 600)]);
+
+    controller.camera.setScale(1.2);
+    await tester.pump();
+    expect(observed, [const Size(800, 600)]);
+
+    await tester.pumpWidget(
+      _buildHost(
+        controller: controller,
+        viewportSize: const Size(640, 480),
+        layers: const [
+          CanvasLayer.positionedItems(id: 'empty', items: <CanvasItem>[]),
+        ],
+      ),
+    );
+    expect(controller.camera.viewportSize, const Size(640, 480));
+    expect(observed, [const Size(800, 600), const Size(640, 480)]);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    expect(controller.camera.viewportSize, Size.zero);
+    expect(observed.last, Size.zero);
+  });
+
+  testWidgets('aligned fitting calculates contain, width, and height zoom', (
+    WidgetTester tester,
+  ) async {
+    final controller = CanvasController(maxZoom: 10);
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      _buildHost(
+        controller: controller,
+        layers: const [
+          CanvasLayer.positionedItems(id: 'empty', items: <CanvasItem>[]),
+        ],
+      ),
+    );
+
+    const rect = Rect.fromLTWH(100, 200, 400, 400);
+    const expectedZooms = <CanvasFitMode, double>{
+      CanvasFitMode.contain: 1.5,
+      CanvasFitMode.width: 2,
+      CanvasFitMode.height: 1.5,
+    };
+
+    for (final entry in expectedZooms.entries) {
+      final fitted = controller.camera.fitWorldRectAligned(
+        rect,
+        fit: entry.key,
+      );
+      expect(fitted, isTrue, reason: entry.key.name);
+      expect(
+        controller.camera.scale,
+        closeTo(entry.value, 1e-9),
+        reason: entry.key.name,
+      );
+    }
+  });
+
+  testWidgets('aligned fitting honors screen padding and alignment', (
+    WidgetTester tester,
+  ) async {
+    final controller = CanvasController(maxZoom: 10);
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      _buildHost(
+        controller: controller,
+        layers: const [
+          CanvasLayer.positionedItems(id: 'empty', items: <CanvasItem>[]),
+        ],
+      ),
+    );
+
+    const rect = Rect.fromLTWH(100, 200, 400, 200);
+    const padding = EdgeInsets.fromLTRB(20, 30, 40, 50);
+    expect(
+      controller.camera.fitWorldRectAligned(
+        rect,
+        fit: CanvasFitMode.width,
+        alignment: Alignment.topLeft,
+        screenPadding: padding,
+      ),
+      isTrue,
+    );
+    expect(controller.camera.scale, closeTo(1.85, 1e-9));
+    final topLeft = controller.camera.worldToScreen(rect.topLeft);
+    final topRight = controller.camera.worldToScreen(rect.topRight);
+    expect(topLeft.dx, closeTo(20, 1e-6));
+    expect(topLeft.dy, closeTo(30, 1e-6));
+    expect(topRight.dx, closeTo(760, 1e-6));
+
+    const clampedRect = Rect.fromLTWH(100, 200, 200, 100);
+    final expectedOffsets = <(Alignment, Offset)>[
+      (Alignment.topLeft, const Offset(20, 30)),
+      (Alignment.center, const Offset(190, 190)),
+      (Alignment.bottomRight, const Offset(360, 350)),
+    ];
+    for (final (alignment, expectedOffset) in expectedOffsets) {
+      final fitted = controller.camera.fitWorldRectAligned(
+        clampedRect,
+        fit: CanvasFitMode.width,
+        alignment: alignment,
+        screenPadding: padding,
+        maxZoom: 2,
+      );
+      expect(fitted, isTrue, reason: alignment.toString());
+      final screenTopLeft = controller.camera.worldToScreen(
+        clampedRect.topLeft,
+      );
+      expect(
+        screenTopLeft.dx,
+        closeTo(expectedOffset.dx, 1e-6),
+        reason: alignment.toString(),
+      );
+      expect(
+        screenTopLeft.dy,
+        closeTo(expectedOffset.dy, 1e-6),
+        reason: alignment.toString(),
+      );
+    }
+  });
+
+  testWidgets('aligned fitting intersects method and controller zoom limits', (
+    WidgetTester tester,
+  ) async {
+    final controller = CanvasController(minZoom: 0.75, maxZoom: 2);
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      _buildHost(
+        controller: controller,
+        layers: const [
+          CanvasLayer.positionedItems(id: 'empty', items: <CanvasItem>[]),
+        ],
+      ),
+    );
+
+    expect(
+      controller.camera.fitWorldRectAligned(
+        const Rect.fromLTWH(0, 0, 4000, 3000),
+        minZoom: 1,
+      ),
+      isTrue,
+    );
+    expect(controller.camera.scale, closeTo(1, 1e-9));
+
+    expect(
+      controller.camera.fitWorldRectAligned(
+        const Rect.fromLTWH(0, 0, 20, 20),
+        maxZoom: 1.4,
+      ),
+      isTrue,
+    );
+    expect(controller.camera.scale, closeTo(1.4, 1e-9));
+
+    expect(
+      () => controller.camera.fitWorldRectAligned(
+        const Rect.fromLTWH(0, 0, 100, 100),
+        minZoom: 1.5,
+        maxZoom: 1,
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      () => controller.camera.fitWorldRectAligned(
+        const Rect.fromLTWH(0, 0, 100, 100),
+        maxZoom: 0.5,
+      ),
+      throwsArgumentError,
+    );
+  });
+
+  testWidgets('aligned fitting safely rejects unusable geometry', (
+    WidgetTester tester,
+  ) async {
+    final controller = CanvasController();
+    addTearDown(controller.dispose);
+    const rect = Rect.fromLTWH(100, 200, 400, 200);
+
+    expect(controller.camera.fitWorldRectAligned(rect), isFalse);
+    expect(
+      controller.camera.fitWorldRectAligned(Rect.fromLTWH(0, 0, 0, 10)),
+      isFalse,
+    );
+
+    await tester.pumpWidget(
+      _buildHost(
+        controller: controller,
+        layers: const [
+          CanvasLayer.positionedItems(id: 'empty', items: <CanvasItem>[]),
+        ],
+      ),
+    );
+    final before = controller.camera.worldToScreen(rect.topLeft);
+    expect(
+      controller.camera.fitWorldRectAligned(
+        rect,
+        screenPadding: const EdgeInsets.symmetric(horizontal: 400),
+      ),
+      isFalse,
+    );
+    expect(controller.camera.worldToScreen(rect.topLeft), before);
   });
 
   testWidgets('animateToWorldTopLeft reaches target transform', (

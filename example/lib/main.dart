@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'demos/aligned_rect_fit/aligned_rect_fit_demo.dart';
 import 'demos/docking_windows/docking_windows_demo.dart';
 import 'demos/db_schema_designer/db_schema_designer_demo.dart';
 import 'demos/galaxy_trade_map/galaxy_trade_map_demo.dart';
@@ -44,6 +45,19 @@ class DemoMenuPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          _DemoTile(
+            title: 'Aligned Rectangle Fit',
+            subtitle:
+                'Try contain/width/height fitting, alignment, screen padding, and zoom clamps.',
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const AlignedRectFitDemoPage(),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
           _DemoTile(
             title: 'Docking Windows',
             subtitle:

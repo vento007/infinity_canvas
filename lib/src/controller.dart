@@ -79,6 +79,7 @@ class CanvasController extends ChangeNotifier implements CanvasApi {
 
   final ValueNotifier<CanvasKitRenderStats?> _renderStats =
       ValueNotifier<CanvasKitRenderStats?>(null);
+  final ValueNotifier<Size> _viewportSize = ValueNotifier<Size>(Size.zero);
 
   _ReadItemDiagnostics? _readItemDiagnostics;
   _ReadItemPositionListenable? _readItemPositionListenable;
@@ -381,6 +382,7 @@ class CanvasController extends ChangeNotifier implements CanvasApi {
   void dispose() {
     _cancelCameraAnimation();
     _renderStats.dispose();
+    _viewportSize.dispose();
     _detachedMeasurementRevision.dispose();
     super.dispose();
   }
@@ -400,6 +402,12 @@ class CanvasCameraController implements CanvasCameraApi {
   bool get panEnabled => _owner._panEnabled;
 
   @override
+  Size get viewportSize => _owner._viewportSize.value;
+
+  @override
+  ValueListenable<Size> get viewportSizeListenable => _owner._viewportSize;
+
+  @override
   ValueListenable<CanvasKitRenderStats?> get renderStatsListenable =>
       _owner._renderStats;
   @override
@@ -416,11 +424,13 @@ class CanvasCameraController implements CanvasCameraApi {
 
   @override
   void setTransform(Matrix4 next) {
+    _owner._cancelCameraAnimation();
     _owner._setTransformInternal(next, notify: true);
   }
 
   @override
   void jumpToWorldTopLeft(Offset worldTopLeft, {double? zoom}) {
+    _owner._cancelCameraAnimation();
     final effectiveZoom = (zoom ?? scale)
         .clamp(_owner.minZoom, _owner.maxZoom)
         .toDouble();
@@ -436,14 +446,14 @@ class CanvasCameraController implements CanvasCameraApi {
     final effectiveZoom = (zoom ?? scale)
         .clamp(_owner.minZoom, _owner.maxZoom)
         .toDouble();
-    final stats = renderStats;
-    if (stats == null || stats.viewportSize.isEmpty) {
+    final viewport = viewportSize;
+    if (!_isUsableViewport(viewport)) {
       jumpToWorldTopLeft(worldCenter, zoom: effectiveZoom);
       return;
     }
     final halfViewInWorld = Offset(
-      stats.viewportSize.width / (2 * effectiveZoom),
-      stats.viewportSize.height / (2 * effectiveZoom),
+      viewport.width / (2 * effectiveZoom),
+      viewport.height / (2 * effectiveZoom),
     );
     final worldTopLeft = worldCenter - halfViewInWorld;
     jumpToWorldTopLeft(worldTopLeft, zoom: effectiveZoom);
@@ -480,8 +490,8 @@ class CanvasCameraController implements CanvasCameraApi {
     final effectiveZoom = (zoom ?? scale)
         .clamp(_owner.minZoom, _owner.maxZoom)
         .toDouble();
-    final stats = renderStats;
-    if (stats == null || stats.viewportSize.isEmpty) {
+    final viewport = viewportSize;
+    if (!_isUsableViewport(viewport)) {
       return animateToWorldTopLeft(
         worldCenter,
         zoom: effectiveZoom,
@@ -490,8 +500,8 @@ class CanvasCameraController implements CanvasCameraApi {
       );
     }
     final halfViewInWorld = Offset(
-      stats.viewportSize.width / (2 * effectiveZoom),
-      stats.viewportSize.height / (2 * effectiveZoom),
+      viewport.width / (2 * effectiveZoom),
+      viewport.height / (2 * effectiveZoom),
     );
     final worldTopLeft = worldCenter - halfViewInWorld;
     return animateToWorldTopLeft(
@@ -506,15 +516,15 @@ class CanvasCameraController implements CanvasCameraApi {
   void fitWorldRect(Rect worldRect, {double paddingFraction = 0.08}) {
     if (worldRect.width <= 0 || worldRect.height <= 0) return;
 
-    final stats = renderStats;
-    if (stats == null || stats.viewportSize.isEmpty) {
+    final viewport = viewportSize;
+    if (!_isUsableViewport(viewport)) {
       jumpToWorldCenter(worldRect.center);
       return;
     }
 
     final clampedPadding = paddingFraction.clamp(0.0, 0.49);
-    final viewW = stats.viewportSize.width;
-    final viewH = stats.viewportSize.height;
+    final viewW = viewport.width;
+    final viewH = viewport.height;
     final fitW = math.max(1.0, viewW * (1.0 - clampedPadding * 2.0));
     final fitH = math.max(1.0, viewH * (1.0 - clampedPadding * 2.0));
     final zoomX = fitW / worldRect.width;
@@ -524,6 +534,91 @@ class CanvasCameraController implements CanvasCameraApi {
         .clamp(_owner.minZoom, _owner.maxZoom);
 
     jumpToWorldCenter(worldRect.center, zoom: targetZoom);
+  }
+
+  @override
+  bool fitWorldRectAligned(
+    Rect worldRect, {
+    CanvasFitMode fit = CanvasFitMode.contain,
+    Alignment alignment = Alignment.center,
+    EdgeInsets screenPadding = EdgeInsets.zero,
+    double? minZoom,
+    double? maxZoom,
+  }) {
+    _validateFitZoomLimit(minZoom, 'minZoom');
+    _validateFitZoomLimit(maxZoom, 'maxZoom');
+    if (minZoom != null && maxZoom != null && minZoom > maxZoom) {
+      throw ArgumentError('minZoom must be less than or equal to maxZoom.');
+    }
+
+    final effectiveMinZoom = math.max(
+      _owner.minZoom,
+      minZoom ?? _owner.minZoom,
+    );
+    final effectiveMaxZoom = math.min(
+      _owner.maxZoom,
+      maxZoom ?? _owner.maxZoom,
+    );
+    if (effectiveMinZoom > effectiveMaxZoom) {
+      throw ArgumentError(
+        'The requested zoom limits do not overlap the controller zoom range.',
+      );
+    }
+
+    if (!_isUsableWorldRect(worldRect) ||
+        !_isUsableAlignment(alignment) ||
+        !_isUsablePadding(screenPadding)) {
+      return false;
+    }
+
+    final viewport = viewportSize;
+    if (!_isUsableViewport(viewport)) return false;
+
+    final availableWidth =
+        viewport.width - screenPadding.left - screenPadding.right;
+    final availableHeight =
+        viewport.height - screenPadding.top - screenPadding.bottom;
+    if (!availableWidth.isFinite ||
+        !availableHeight.isFinite ||
+        availableWidth <= 0 ||
+        availableHeight <= 0) {
+      return false;
+    }
+
+    final widthZoom = availableWidth / worldRect.width;
+    final heightZoom = availableHeight / worldRect.height;
+    final fittedZoom = switch (fit) {
+      CanvasFitMode.contain => math.min(widthZoom, heightZoom),
+      CanvasFitMode.width => widthZoom,
+      CanvasFitMode.height => heightZoom,
+    };
+    final targetZoom = fittedZoom
+        .clamp(effectiveMinZoom, effectiveMaxZoom)
+        .toDouble();
+    final scaledSize = Size(
+      worldRect.width * targetZoom,
+      worldRect.height * targetZoom,
+    );
+    if (!scaledSize.width.isFinite || !scaledSize.height.isFinite) {
+      return false;
+    }
+
+    final paddedViewport = Rect.fromLTWH(
+      screenPadding.left,
+      screenPadding.top,
+      availableWidth,
+      availableHeight,
+    );
+    final alignedScreenRect = alignment.inscribe(scaledSize, paddedViewport);
+    final alignedOffset = alignedScreenRect.topLeft;
+    final worldTopLeft = Offset(
+      worldRect.left - (alignedOffset.dx / targetZoom),
+      worldRect.top - (alignedOffset.dy / targetZoom),
+    );
+    if (!worldTopLeft.dx.isFinite || !worldTopLeft.dy.isFinite) return false;
+
+    jumpToWorldTopLeft(worldTopLeft, zoom: targetZoom);
+    return true;
   }
 
   @override
@@ -543,6 +638,7 @@ class CanvasCameraController implements CanvasCameraApi {
   @override
   void translateWorld(Offset worldDelta) {
     if (worldDelta == Offset.zero) return;
+    _owner._cancelCameraAnimation();
     final next = _owner._transform.clone()
       ..translate(worldDelta.dx, worldDelta.dy);
     _owner._setTransformInternal(next, notify: true, takeOwnership: true);
@@ -554,12 +650,47 @@ class CanvasCameraController implements CanvasCameraApi {
     final current = scale;
     if ((clamped - current).abs() < 1e-6) return;
 
+    _owner._cancelCameraAnimation();
     final ratio = clamped / current;
     final next = _owner._transform.clone()
       ..translate(focalWorld.dx, focalWorld.dy)
       ..scale(ratio, ratio)
       ..translate(-focalWorld.dx, -focalWorld.dy);
     _owner._setTransformInternal(next, notify: true, takeOwnership: true);
+  }
+
+  @override
+  void stepScale(int steps, {double increment = 0.05, Offset? focalScreen}) {
+    if (!increment.isFinite || increment <= 0) {
+      throw ArgumentError.value(
+        increment,
+        'increment',
+        'Must be finite and greater than zero.',
+      );
+    }
+    if (focalScreen != null &&
+        (!focalScreen.dx.isFinite || !focalScreen.dy.isFinite)) {
+      throw ArgumentError.value(
+        focalScreen,
+        'focalScreen',
+        'Must contain finite coordinates.',
+      );
+    }
+    if (steps == 0) return;
+
+    const gridEpsilon = 1e-9;
+    final gridPosition = scale / increment;
+    final startingGrid = steps > 0
+        ? (gridPosition + gridEpsilon).floor()
+        : (gridPosition - gridEpsilon).ceil();
+    final nextScale = (startingGrid + steps) * increment;
+    final viewport = viewportSize;
+    final effectiveFocalScreen =
+        focalScreen ??
+        (_isUsableViewport(viewport)
+            ? Offset(viewport.width / 2, viewport.height / 2)
+            : Offset.zero);
+    setScale(nextScale, focalWorld: screenToWorld(effectiveFocalScreen));
   }
 
   @override
@@ -694,6 +825,11 @@ class CanvasLayerVisibilityController implements CanvasLayersApi {
 }
 
 extension CanvasControllerBinding on CanvasController {
+  void setViewportSize(Size size) {
+    if (_viewportSize.value == size) return;
+    _viewportSize.value = size;
+  }
+
   void attachItemAccessors({
     CanvasKitItemDiagnostics? Function(String id)? readDiagnostics,
     ValueListenable<Offset>? Function(String id)? readPositionListenable,
@@ -749,5 +885,43 @@ extension CanvasControllerBinding on CanvasController {
       return;
     }
     _renderStats.value = stats;
+  }
+}
+
+bool _isUsableViewport(Size viewport) {
+  return viewport.width.isFinite &&
+      viewport.height.isFinite &&
+      viewport.width > 0 &&
+      viewport.height > 0;
+}
+
+bool _isUsableWorldRect(Rect rect) {
+  return rect.left.isFinite &&
+      rect.top.isFinite &&
+      rect.right.isFinite &&
+      rect.bottom.isFinite &&
+      rect.width > 0 &&
+      rect.height > 0;
+}
+
+bool _isUsableAlignment(Alignment alignment) {
+  return alignment.x.isFinite && alignment.y.isFinite;
+}
+
+bool _isUsablePadding(EdgeInsets padding) {
+  return padding.left.isFinite &&
+      padding.top.isFinite &&
+      padding.right.isFinite &&
+      padding.bottom.isFinite &&
+      padding.left >= 0 &&
+      padding.top >= 0 &&
+      padding.right >= 0 &&
+      padding.bottom >= 0;
+}
+
+void _validateFitZoomLimit(double? value, String name) {
+  if (value == null) return;
+  if (!value.isFinite || value <= 0) {
+    throw ArgumentError.value(value, name, 'must be finite and greater than 0');
   }
 }

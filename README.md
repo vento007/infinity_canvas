@@ -48,7 +48,7 @@
 
 ```yaml
 dependencies:
-  infinity_canvas: ^0.9.0
+  infinity_canvas: ^0.11.0
 ```
 
 ## Quickstart
@@ -186,7 +186,61 @@ await controller.camera.animateToWorldCenter(
 );
 
 controller.camera.fitAllItems();
+
+// Fit a paper-like rect to viewport width while pinning its top-left corner
+// 16 logical pixels inside the canvas.
+controller.camera.fitWorldRectAligned(
+  paperRect,
+  fit: CanvasFitMode.width,
+  alignment: Alignment.topLeft,
+  screenPadding: const EdgeInsets.all(16),
+  minZoom: 0.6,
+  maxZoom: 1.4,
+);
+
+// Additive, directionally snapped zoom steps around the viewport center.
+controller.camera.stepScale(-1); // Zoom out by five percentage points.
+controller.camera.stepScale(1);  // Zoom in by five percentage points.
 ```
+
+`fitWorldRectAligned` computes the zoom and position for initial framing,
+reset, or application-controlled resize refitting. To refit after the initial
+layout and whenever the canvas size changes, use the widget callback:
+
+```dart
+InfinityCanvas(
+  controller: controller,
+  onViewportSizeChanged: (_) {
+    controller.camera.fitWorldRectAligned(
+      paperRect,
+      fit: CanvasFitMode.width,
+      alignment: Alignment.topLeft,
+      screenPadding: const EdgeInsets.all(16),
+      minZoom: 0.6,
+      maxZoom: 1.4,
+    );
+  },
+  layers: layers,
+);
+```
+
+The callback runs after layout, so camera methods can be called directly. No
+viewport listener or post-frame scheduling is needed. Applications still
+decide whether resize should refit and potentially replace a user's panned
+view. Replacing the canvas controller reports the current viewport size again,
+even when the widget size is unchanged, so the new controller can be fitted.
+
+`stepScale` uses an additive grid and snaps in the requested direction. Its
+increment is configurable, and an optional local screen focal point can replace
+the default viewport center:
+
+```dart
+controller.camera.stepScale(1, increment: 0.10);
+controller.camera.stepScale(-1, focalScreen: const Offset(100, 80));
+```
+
+Exact `viewportSize` and `viewportSizeListenable` state remains available for
+advanced integrations that need more than the widget callback.
 
 ### Layer types
 
@@ -239,6 +293,7 @@ CanvasItem(
 
 See `example/lib/main.dart`:
 
+- Aligned Rectangle Fit
 - Minimal Items
 - Painted Item Widgets
 - Node Canvas (Clean)
@@ -265,12 +320,19 @@ See `example/lib/main.dart`:
 - `animateToWorldTopLeft(...)`
 - `animateToWorldCenter(...)`
 - `fitWorldRect(...)`
+- `fitWorldRectAligned(...)`
 - `fitAllItems(...)`
 - `setScale(...)`
+- `stepScale(...)`
 - `translateWorld(...)`
 - `screenToWorld(...)`
 - `worldToScreen(...)`
+- `viewportSize` / `viewportSizeListenable`
 - `renderStatsListenable`
+
+### `InfinityCanvas`
+
+- `onViewportSizeChanged`: post-layout initial and resize notifications
 
 ### `controller.items`
 

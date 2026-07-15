@@ -51,6 +51,10 @@ class CanvasItemDragEvent {
 
 enum CanvasBringToFrontBehavior { never, onTap, onDragStart, onTapOrDragStart }
 
+/// Controls which viewport dimension determines the zoom when fitting a world
+/// rectangle.
+enum CanvasFitMode { contain, width, height }
+
 class CanvasItemBehavior {
   final bool draggable;
   final CanvasBringToFrontBehavior bringToFront;
@@ -155,6 +159,19 @@ abstract interface class CanvasCameraApi {
   double get scale;
   bool get panEnabled;
 
+  /// The canvas's current laid-out viewport size in logical pixels.
+  ///
+  /// The value is [Size.zero] before the canvas is laid out and after it is
+  /// detached from this camera. Unlike [renderStats], this is exact layout
+  /// state and is not throttled.
+  Size get viewportSize;
+
+  /// Notifies whenever [viewportSize] changes.
+  ///
+  /// A change can be emitted during layout. Listeners that update widgets or
+  /// refit the camera should defer that work to a post-frame callback.
+  ValueListenable<Size> get viewportSizeListenable;
+
   /// Throttled render statistics for the current viewport.
   ///
   /// These values are not updated on every frame. They are sampled on a
@@ -181,6 +198,22 @@ abstract interface class CanvasCameraApi {
     Curve curve = Curves.easeOutCubic,
   });
   void fitWorldRect(Rect worldRect, {double paddingFraction = 0.08});
+
+  /// Fits [worldRect] using [fit] and positions it within the screen-space
+  /// viewport remaining after [screenPadding].
+  ///
+  /// [minZoom] and [maxZoom] optionally narrow the controller's zoom range for
+  /// this operation. Returns `false` without changing the camera when the rect,
+  /// viewport, or padded viewport is unusable.
+  bool fitWorldRectAligned(
+    Rect worldRect, {
+    CanvasFitMode fit = CanvasFitMode.contain,
+    Alignment alignment = Alignment.center,
+    EdgeInsets screenPadding = EdgeInsets.zero,
+    double? minZoom,
+    double? maxZoom,
+  });
+
   void fitAllItems({
     double paddingFraction = 0.08,
     double worldPadding = 120.0,
@@ -188,6 +221,15 @@ abstract interface class CanvasCameraApi {
   });
   void translateWorld(Offset worldDelta);
   void setScale(double nextScale, {Offset focalWorld = Offset.zero});
+
+  /// Moves the camera scale by [steps] on an additive zoom grid.
+  ///
+  /// Positive values zoom in and negative values zoom out. When the current
+  /// scale is between grid values, the first step moves to the next grid value
+  /// in the requested direction. [increment] defaults to five percentage
+  /// points. The focal point defaults to the center of the laid-out viewport.
+  void stepScale(int steps, {double increment = 0.05, Offset? focalScreen});
+
   Offset deltaScreenToWorld(Offset screenDelta);
   Offset screenToWorld(Offset screenPoint);
   Offset worldToScreen(Offset worldPoint);

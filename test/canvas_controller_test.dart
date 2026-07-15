@@ -69,6 +69,49 @@ void main() {
     expect(after.dy, closeTo(before.dy, 1e-6));
   });
 
+  test('stepScale snaps directionally on a configurable grid', () {
+    final controller = CanvasController(initialZoom: 1.42, maxZoom: 2);
+    addTearDown(controller.dispose);
+
+    controller.camera.stepScale(-1);
+    expect(controller.camera.scale, closeTo(1.4, 1e-9));
+
+    controller.camera.setScale(1.43);
+    controller.camera.stepScale(1);
+    expect(controller.camera.scale, closeTo(1.45, 1e-9));
+
+    controller.camera.setScale(1.04);
+    controller.camera.stepScale(1, increment: 0.1);
+    expect(controller.camera.scale, closeTo(1.1, 1e-9));
+  });
+
+  test('stepScale respects controller bounds and validates arguments', () {
+    final controller = CanvasController(initialZoom: 1.42, maxZoom: 1.43);
+    addTearDown(controller.dispose);
+
+    controller.camera.stepScale(1);
+    expect(controller.camera.scale, closeTo(1.43, 1e-9));
+
+    controller.camera.stepScale(-1);
+    expect(controller.camera.scale, closeTo(1.4, 1e-9));
+
+    expect(
+      () => controller.camera.stepScale(1, increment: 0),
+      throwsArgumentError,
+    );
+    expect(
+      () => controller.camera.stepScale(1, increment: double.nan),
+      throwsArgumentError,
+    );
+    expect(
+      () => controller.camera.stepScale(
+        1,
+        focalScreen: const Offset(double.infinity, 0),
+      ),
+      throwsArgumentError,
+    );
+  });
+
   test('jumpToWorldTopLeft maps target to screen origin', () {
     final controller = CanvasController();
     addTearDown(controller.dispose);

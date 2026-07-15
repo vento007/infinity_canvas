@@ -24,6 +24,14 @@ class InfinityCanvas extends StatefulWidget {
 
   final Function(double currentZoom)? onZoomChanged;
 
+  /// Called after layout when the canvas viewport size changes.
+  ///
+  /// The initial laid-out size is reported as well. Camera mutations are safe
+  /// from this callback, so callers can refit without managing a listener or
+  /// scheduling their own post-frame callback. Replacing [controller] reports
+  /// the current size again so the new controller can be initialized.
+  final ValueChanged<Size>? onViewportSizeChanged;
+
   InfinityCanvas({
     super.key,
     required this.layers,
@@ -34,6 +42,7 @@ class InfinityCanvas extends StatefulWidget {
     this.clipBehavior = Clip.hardEdge,
     this.enableBringToFrontOrdering = true,
     this.onZoomChanged,
+    this.onViewportSizeChanged,
   }) : assert(
          CanvasLayerStore.hasUniqueLayerIds(layers),
          'Canvas layer ids must be unique',
@@ -64,6 +73,9 @@ class _InfinityCanvasState extends State<InfinityCanvas> {
   Size _cachedVisibleWorldViewport = Size.zero;
   double _cachedVisibleWorldPadding = double.nan;
   Rect _cachedVisibleWorldRect = Rect.zero;
+  Size? _pendingViewportCallbackSize;
+  bool _viewportCallbackScheduled = false;
+  bool _notifyViewportAfterLayout = false;
 
   @override
   void initState() {
@@ -128,6 +140,7 @@ class _InfinityCanvasState extends State<InfinityCanvas> {
         hasLayerId: _layerStore.hasLayerId,
       );
       _cameraStore.resetTracking(_controller!);
+      _notifyViewportAfterLayout = true;
     }
 
     _layerStore.replaceLayers(widget.layers);
@@ -168,6 +181,20 @@ class _InfinityCanvasState extends State<InfinityCanvas> {
       setState(() {});
     }
     _requestRenderStats();
+  }
+
+  void _scheduleViewportSizeChanged(Size viewportSize) {
+    _pendingViewportCallbackSize = viewportSize;
+    if (_viewportCallbackScheduled) return;
+    _viewportCallbackScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _viewportCallbackScheduled = false;
+      final pendingSize = _pendingViewportCallbackSize;
+      _pendingViewportCallbackSize = null;
+      if (!mounted || pendingSize == null) return;
+      if (_controller!.camera.viewportSize != pendingSize) return;
+      widget.onViewportSizeChanged?.call(pendingSize);
+    });
   }
 
   int _visibleItemCount(Rect screenVisible) {
@@ -709,7 +736,10 @@ class _InfinityCanvasState extends State<InfinityCanvas> {
         final viewportSize = Size(constraints.maxWidth, constraints.maxHeight);
         final viewportChanged = _cameraStore.setViewportSize(viewportSize);
         _controller!.setViewportSize(viewportSize);
-        if (viewportChanged) {
+        final notifyViewport = viewportChanged || _notifyViewportAfterLayout;
+        _notifyViewportAfterLayout = false;
+        if (notifyViewport) {
+          _scheduleViewportSizeChanged(viewportSize);
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
             _requestRenderStats(immediate: true);

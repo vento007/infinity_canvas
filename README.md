@@ -48,7 +48,7 @@
 
 ```yaml
 dependencies:
-  infinity_canvas: ^0.9.0
+  infinity_canvas: ^0.11.0
 ```
 
 ## Quickstart
@@ -198,34 +198,49 @@ controller.camera.fitWorldRectAligned(
   maxZoom: 1.4,
 );
 
-// Exact layout state, separate from throttled diagnostics.
-controller.camera.viewportSize;
-controller.camera.viewportSizeListenable;
+// Additive, directionally snapped zoom steps around the viewport center.
+controller.camera.stepScale(-1); // Zoom out by five percentage points.
+controller.camera.stepScale(1);  // Zoom in by five percentage points.
 ```
 
 `fitWorldRectAligned` computes the zoom and position for initial framing,
-reset, or application-controlled resize refitting. Zoom buttons are a separate
-UI policy: calculate the next scale and apply it with `setScale`.
+reset, or application-controlled resize refitting. To refit after the initial
+layout and whenever the canvas size changes, use the widget callback:
 
 ```dart
-void stepZoom(int steps) {
-  const step = 0.05; // Five percentage points.
-  final current = controller.camera.scale;
-  final nextZoom = ((current / step).round() + steps) * step;
-
-  controller.camera.setScale(
-    nextZoom,
-    // Keeps the fitted paper corner at its current screen position.
-    focalWorld: paperRect.topLeft,
-  );
-}
-
-stepZoom(-1); // 100% -> 95%
-stepZoom(1);  // 95% -> 100%
+InfinityCanvas(
+  controller: controller,
+  onViewportSizeChanged: (_) {
+    controller.camera.fitWorldRectAligned(
+      paperRect,
+      fit: CanvasFitMode.width,
+      alignment: Alignment.topLeft,
+      screenPadding: const EdgeInsets.all(16),
+      minZoom: 0.6,
+      maxZoom: 1.4,
+    );
+  },
+  layers: layers,
+);
 ```
 
-The step size and focal point are caller-controlled; the package does not
-hardcode a zoom-button policy.
+The callback runs after layout, so camera methods can be called directly. No
+viewport listener or post-frame scheduling is needed. Applications still
+decide whether resize should refit and potentially replace a user's panned
+view. Replacing the canvas controller reports the current viewport size again,
+even when the widget size is unchanged, so the new controller can be fitted.
+
+`stepScale` uses an additive grid and snaps in the requested direction. Its
+increment is configurable, and an optional local screen focal point can replace
+the default viewport center:
+
+```dart
+controller.camera.stepScale(1, increment: 0.10);
+controller.camera.stepScale(-1, focalScreen: const Offset(100, 80));
+```
+
+Exact `viewportSize` and `viewportSizeListenable` state remains available for
+advanced integrations that need more than the widget callback.
 
 ### Layer types
 
@@ -308,11 +323,16 @@ See `example/lib/main.dart`:
 - `fitWorldRectAligned(...)`
 - `fitAllItems(...)`
 - `setScale(...)`
+- `stepScale(...)`
 - `translateWorld(...)`
 - `screenToWorld(...)`
 - `worldToScreen(...)`
 - `viewportSize` / `viewportSizeListenable`
 - `renderStatsListenable`
+
+### `InfinityCanvas`
+
+- `onViewportSizeChanged`: post-layout initial and resize notifications
 
 ### `controller.items`
 

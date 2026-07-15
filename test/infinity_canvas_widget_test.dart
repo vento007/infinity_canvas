@@ -10,6 +10,7 @@ Widget _buildHost({
   CanvasInputBehavior inputBehavior = const CanvasInputBehavior.desktop(),
   bool enableCulling = false,
   Size viewportSize = const Size(800, 600),
+  ValueChanged<Size>? onViewportSizeChanged,
 }) {
   return MaterialApp(
     home: Scaffold(
@@ -21,6 +22,7 @@ Widget _buildHost({
             controller: controller,
             inputBehavior: inputBehavior,
             enableCulling: enableCulling,
+            onViewportSizeChanged: onViewportSizeChanged,
             layers: layers,
           ),
         ),
@@ -337,6 +339,127 @@ void main() {
     expect(observed.last, Size.zero);
   });
 
+  testWidgets(
+    'viewport callback is post-layout and supports direct refitting',
+    (WidgetTester tester) async {
+      final controller = CanvasController(maxZoom: 10);
+      addTearDown(controller.dispose);
+      const paperRect = Rect.fromLTWH(100, 200, 400, 200);
+      final observed = <Size>[];
+
+      Widget host(Size size) => _buildHost(
+        controller: controller,
+        viewportSize: size,
+        onViewportSizeChanged: (viewportSize) {
+          observed.add(viewportSize);
+          controller.camera.fitWorldRectAligned(
+            paperRect,
+            fit: CanvasFitMode.width,
+            alignment: Alignment.topLeft,
+            screenPadding: const EdgeInsets.all(20),
+          );
+        },
+        layers: const [
+          CanvasLayer.positionedItems(id: 'empty', items: <CanvasItem>[]),
+        ],
+      );
+
+      await tester.pumpWidget(host(const Size(800, 600)));
+      expect(observed, [const Size(800, 600)]);
+      var paperTopLeft = controller.camera.worldToScreen(paperRect.topLeft);
+      expect(paperTopLeft.dx, closeTo(20, 1e-6));
+      expect(paperTopLeft.dy, closeTo(20, 1e-6));
+
+      await tester.pumpWidget(host(const Size(800, 600)));
+      expect(observed, [const Size(800, 600)]);
+
+      controller.camera.setScale(1.2);
+      await tester.pump();
+      expect(observed, [const Size(800, 600)]);
+
+      await tester.pumpWidget(host(const Size(640, 480)));
+      expect(observed, [const Size(800, 600), const Size(640, 480)]);
+      paperTopLeft = controller.camera.worldToScreen(paperRect.topLeft);
+      expect(paperTopLeft.dx, closeTo(20, 1e-6));
+      expect(paperTopLeft.dy, closeTo(20, 1e-6));
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      expect(observed, [const Size(800, 600), const Size(640, 480)]);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'viewport callback reports the current size after controller replacement',
+    (WidgetTester tester) async {
+      final firstController = CanvasController(maxZoom: 10);
+      final secondController = CanvasController(maxZoom: 10);
+      addTearDown(firstController.dispose);
+      addTearDown(secondController.dispose);
+      const paperRect = Rect.fromLTWH(100, 200, 400, 200);
+      final observed = <String>[];
+
+      Widget host(CanvasController controller, String controllerName) =>
+          _buildHost(
+            controller: controller,
+            onViewportSizeChanged: (viewportSize) {
+              observed.add('$controllerName:$viewportSize');
+              controller.camera.fitWorldRectAligned(
+                paperRect,
+                fit: CanvasFitMode.width,
+                alignment: Alignment.topLeft,
+                screenPadding: const EdgeInsets.all(20),
+              );
+            },
+            layers: const [
+              CanvasLayer.positionedItems(id: 'empty', items: <CanvasItem>[]),
+            ],
+          );
+
+      await tester.pumpWidget(host(firstController, 'first'));
+      expect(observed, ['first:${const Size(800, 600)}']);
+
+      await tester.pumpWidget(host(secondController, 'second'));
+      expect(observed, [
+        'first:${const Size(800, 600)}',
+        'second:${const Size(800, 600)}',
+      ]);
+      expect(firstController.camera.viewportSize, Size.zero);
+      expect(secondController.camera.viewportSize, const Size(800, 600));
+
+      final paperTopLeft = secondController.camera.worldToScreen(
+        paperRect.topLeft,
+      );
+      expect(paperTopLeft.dx, closeTo(20, 1e-6));
+      expect(paperTopLeft.dy, closeTo(20, 1e-6));
+    },
+  );
+
+  testWidgets('stepScale keeps the viewport center fixed', (
+    WidgetTester tester,
+  ) async {
+    final controller = CanvasController();
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      _buildHost(
+        controller: controller,
+        layers: const [
+          CanvasLayer.positionedItems(id: 'empty', items: <CanvasItem>[]),
+        ],
+      ),
+    );
+
+    const viewportCenter = Offset(400, 300);
+    final focalWorld = controller.camera.screenToWorld(viewportCenter);
+    controller.camera.stepScale(1);
+
+    expect(controller.camera.scale, closeTo(1.05, 1e-9));
+    final focalAfter = controller.camera.worldToScreen(focalWorld);
+    expect(focalAfter.dx, closeTo(viewportCenter.dx, 1e-6));
+    expect(focalAfter.dy, closeTo(viewportCenter.dy, 1e-6));
+  });
+
   testWidgets('aligned fitting calculates contain, width, and height zoom', (
     WidgetTester tester,
   ) async {
@@ -551,6 +674,43 @@ void main() {
     expect(screenTopLeft.dx, closeTo(0, 0.01));
     expect(screenTopLeft.dy, closeTo(0, 0.01));
     expect(controller.camera.scale, closeTo(1.5, 0.001));
+  });
+
+  testWidgets('direct zoom command supersedes an active camera animation', (
+    WidgetTester tester,
+  ) async {
+    final controller = CanvasController();
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      _buildHost(
+        controller: controller,
+        layers: const [
+          CanvasLayer.positionedItems(id: 'empty', items: <CanvasItem>[]),
+        ],
+      ),
+    );
+
+    final animation = controller.camera.animateToWorldTopLeft(
+      const Offset(500, 400),
+      zoom: 2,
+      duration: const Duration(seconds: 1),
+      curve: Curves.linear,
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    controller.camera.stepScale(-1);
+    final heldScale = controller.camera.scale;
+    final heldOrigin = controller.camera.worldToScreen(Offset.zero);
+
+    await tester.pump(const Duration(seconds: 2));
+    await animation;
+
+    expect(controller.camera.scale, closeTo(heldScale, 1e-9));
+    final originAfter = controller.camera.worldToScreen(Offset.zero);
+    expect(originAfter.dx, closeTo(heldOrigin.dx, 1e-6));
+    expect(originAfter.dy, closeTo(heldOrigin.dy, 1e-6));
   });
 
   testWidgets('mouse wheel zoom obeys input behavior', (

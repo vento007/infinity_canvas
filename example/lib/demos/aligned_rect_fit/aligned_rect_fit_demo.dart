@@ -10,7 +10,6 @@ class AlignedRectFitDemoPage extends StatefulWidget {
 
 class _AlignedRectFitDemoPageState extends State<AlignedRectFitDemoPage> {
   static const _paperRect = Rect.fromLTWH(240, 160, 760, 480);
-  static const _zoomStep = 0.05;
 
   late final CanvasController _controller;
   CanvasFitMode _fitMode = CanvasFitMode.width;
@@ -18,7 +17,6 @@ class _AlignedRectFitDemoPageState extends State<AlignedRectFitDemoPage> {
   _PaddingChoice _padding = _paddingChoices[1];
   bool _limitFitZoom = true;
   bool _refitOnResize = true;
-  bool _viewportUpdateScheduled = false;
   bool _didInitialFit = false;
   double _zoom = 1;
   String _status = 'Waiting for the first viewport layout…';
@@ -27,31 +25,20 @@ class _AlignedRectFitDemoPageState extends State<AlignedRectFitDemoPage> {
   void initState() {
     super.initState();
     _controller = CanvasController(minZoom: 0.25, maxZoom: 2.5);
-    _controller.camera.viewportSizeListenable.addListener(
-      _handleViewportChanged,
-    );
   }
 
   @override
   void dispose() {
-    _controller.camera.viewportSizeListenable.removeListener(
-      _handleViewportChanged,
-    );
     _controller.dispose();
     super.dispose();
   }
 
-  void _handleViewportChanged() {
-    if (_viewportUpdateScheduled) return;
-    _viewportUpdateScheduled = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _viewportUpdateScheduled = false;
-      if (!mounted) return;
-      setState(() {});
-      if (!_didInitialFit || _refitOnResize) {
-        _applyFit();
-      }
-    });
+  void _handleViewportSizeChanged(Size viewportSize) {
+    if (!_didInitialFit || _refitOnResize) {
+      _applyFit();
+      return;
+    }
+    if (mounted) setState(() {});
   }
 
   void _applyFit() {
@@ -74,13 +61,10 @@ class _AlignedRectFitDemoPageState extends State<AlignedRectFitDemoPage> {
   }
 
   void _stepZoom(int steps) {
-    final nextZoom =
-        ((_controller.camera.scale / _zoomStep).round() + steps) * _zoomStep;
-    _controller.camera.setScale(nextZoom, focalWorld: _paperRect.topLeft);
+    _controller.camera.stepScale(steps);
     setState(() {
       _zoom = _controller.camera.scale;
-      _status =
-          '5% zoom step around the paper top-left (separate from fitting)';
+      _status = '5% zoom step around the viewport center';
     });
   }
 
@@ -120,6 +104,7 @@ class _AlignedRectFitDemoPageState extends State<AlignedRectFitDemoPage> {
               color: const Color(0xFF07111F),
               child: InfinityCanvas(
                 controller: _controller,
+                onViewportSizeChanged: _handleViewportSizeChanged,
                 onZoomChanged: (zoom) {
                   if (!mounted) return;
                   setState(() => _zoom = zoom);

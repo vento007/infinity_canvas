@@ -424,11 +424,13 @@ class CanvasCameraController implements CanvasCameraApi {
 
   @override
   void setTransform(Matrix4 next) {
+    _owner._cancelCameraAnimation();
     _owner._setTransformInternal(next, notify: true);
   }
 
   @override
   void jumpToWorldTopLeft(Offset worldTopLeft, {double? zoom}) {
+    _owner._cancelCameraAnimation();
     final effectiveZoom = (zoom ?? scale)
         .clamp(_owner.minZoom, _owner.maxZoom)
         .toDouble();
@@ -636,6 +638,7 @@ class CanvasCameraController implements CanvasCameraApi {
   @override
   void translateWorld(Offset worldDelta) {
     if (worldDelta == Offset.zero) return;
+    _owner._cancelCameraAnimation();
     final next = _owner._transform.clone()
       ..translate(worldDelta.dx, worldDelta.dy);
     _owner._setTransformInternal(next, notify: true, takeOwnership: true);
@@ -647,12 +650,47 @@ class CanvasCameraController implements CanvasCameraApi {
     final current = scale;
     if ((clamped - current).abs() < 1e-6) return;
 
+    _owner._cancelCameraAnimation();
     final ratio = clamped / current;
     final next = _owner._transform.clone()
       ..translate(focalWorld.dx, focalWorld.dy)
       ..scale(ratio, ratio)
       ..translate(-focalWorld.dx, -focalWorld.dy);
     _owner._setTransformInternal(next, notify: true, takeOwnership: true);
+  }
+
+  @override
+  void stepScale(int steps, {double increment = 0.05, Offset? focalScreen}) {
+    if (!increment.isFinite || increment <= 0) {
+      throw ArgumentError.value(
+        increment,
+        'increment',
+        'Must be finite and greater than zero.',
+      );
+    }
+    if (focalScreen != null &&
+        (!focalScreen.dx.isFinite || !focalScreen.dy.isFinite)) {
+      throw ArgumentError.value(
+        focalScreen,
+        'focalScreen',
+        'Must contain finite coordinates.',
+      );
+    }
+    if (steps == 0) return;
+
+    const gridEpsilon = 1e-9;
+    final gridPosition = scale / increment;
+    final startingGrid = steps > 0
+        ? (gridPosition + gridEpsilon).floor()
+        : (gridPosition - gridEpsilon).ceil();
+    final nextScale = (startingGrid + steps) * increment;
+    final viewport = viewportSize;
+    final effectiveFocalScreen =
+        focalScreen ??
+        (_isUsableViewport(viewport)
+            ? Offset(viewport.width / 2, viewport.height / 2)
+            : Offset.zero);
+    setScale(nextScale, focalWorld: screenToWorld(effectiveFocalScreen));
   }
 
   @override

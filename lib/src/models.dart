@@ -221,6 +221,15 @@ abstract interface class CanvasCameraApi {
   });
   void translateWorld(Offset worldDelta);
   void setScale(double nextScale, {Offset focalWorld = Offset.zero});
+
+  /// Moves the camera scale by [steps] on an additive zoom grid.
+  ///
+  /// Positive values zoom in and negative values zoom out. When the current
+  /// scale is between grid values, the first step moves to the next grid value
+  /// in the requested direction. [increment] defaults to five percentage
+  /// points. The focal point defaults to the center of the laid-out viewport.
+  void stepScale(int steps, {double increment = 0.05, Offset? focalScreen});
+
   Offset deltaScreenToWorld(Offset screenDelta);
   Offset screenToWorld(Offset screenPoint);
   Offset worldToScreen(Offset worldPoint);

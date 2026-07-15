@@ -8,6 +8,13 @@
 - Added exact `viewportSize` and `viewportSizeListenable` camera state for
   deterministic camera layout and resize handling without relying on throttled
   render diagnostics.
+- Added `InfinityCanvas.onViewportSizeChanged`, delivered after layout for the
+  initial viewport and later resizes, so callers can refit without manually
+  managing listeners or post-frame callbacks.
+- Added configurable `CanvasCameraApi.stepScale(...)` with directional grid
+  snapping, controller zoom clamping, and viewport-center focus by default.
+- Direct camera transform commands now supersede an active camera animation,
+  preventing a later animation frame from overwriting a manual zoom or fit.
 - Added an interactive Aligned Rectangle Fit example covering fit modes,
   alignments, padding presets, zoom clamps, resize refitting, and separate 5%
   zoom steps.
@@ -15,10 +22,8 @@
 **Breaking changes**
 
 - Added members to `CanvasCameraApi`. This is additive for API consumers but
-  requires third-party implementations of the interface to add the new fit and
-  viewport members.
-- `viewportSizeListenable` can notify during layout. Listeners that refit the
-  camera or update widgets should schedule that work in a post-frame callback.
+  requires third-party implementations of the interface to add the new fit,
+  viewport, and scale-stepping members.
 
 ## 0.10.0
 
